@@ -25,26 +25,24 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _ARM_MACHINE_CPU_FEATURES_H
-#define _ARM_MACHINE_CPU_FEATURES_H
 
-/* __ARM_ARCH__ is a number corresponding to the ARM revision
- * we're going to support. Our toolchain doesn't define __ARM_ARCH__
- * so try to guess it.
- */
-#ifndef __ARM_ARCH__
-#  if defined __ARM_ARCH_8__ || defined __ARM_ARCH_8A__
-#    define __ARM_ARCH__ 8
-#  elif defined __ARM_ARCH_7__   || defined __ARM_ARCH_7A__ || \
-        defined __ARM_ARCH_7R__  || defined __ARM_ARCH_7M__
-#    define __ARM_ARCH__ 7
-#  elif defined __ARM_ARCH_6__   || defined __ARM_ARCH_6J__ || \
-        defined __ARM_ARCH_6K__  || defined __ARM_ARCH_6Z__ || \
-        defined __ARM_ARCH_6KZ__ || defined __ARM_ARCH_6T2__
-#    define __ARM_ARCH__ 6
-#  else
-#    error Unknown or unsupported ARM architecture
-#  endif
-#endif
+// Prototype: void *memcpy (void *dst, const void *src, size_t count).
 
-#endif /* _ARM_MACHINE_CPU_FEATURES_H */
+#include <private/bionic_asm.h>
+
+ENTRY(__memcpy_chk)
+  cmp x2, x3
+  bls memcpy
+
+  // Preserve for accurate backtrace.
+  stp x29, x30, [sp, -16]!
+  .cfi_def_cfa_offset 16
+  .cfi_rel_offset x29, 0
+  .cfi_rel_offset x30, 8
+
+  bl __memcpy_chk_fail
+END(__memcpy_chk)
+
+ENTRY(memcpy)
+  #include "memcpy_base.S"
+END(memcpy)
